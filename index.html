@@ -2,727 +2,738 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chemie Masterclass | 2BK Premium Kurs</title>
-    <meta name="description" content="Interaktive Premium-Lernplattform für Chemie (2BK). Redox-Balancer, Elektronenkonfiguration, Lernpfade. Offline-fähig.">
-    <meta name="theme-color" content="#0b3d91">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemie Master 2026 - Prüfungsvorbereitung</title>
+    <meta name="description" content="Interaktive Lernplattform für Chemie (Sekundarstufe). Offlinefähig, Druckoptimiert.">
     
-    <!-- 
-    PREMIUM CHEMIE LERNPLATTFORM (SINGLE FILE)
-    
-    Version: 2.0 (Mega-Prompt Edition)
-    Zielgruppe: 2BK / Sekundarstufe II
-    Testdatum: 14.01.2026
-    
-    Architektur:
-    - Vanilla JS (ES6+) im "View-Controller-Service" Pattern
-    - Keine externen Abhängigkeiten
-    - Lokale Datenhaltung (LocalStorage)
-    - Responsive Mobile-First Design
-    
-    Features:
-    - Intelligenter Redox-Balancer (Teilgleichungsmethode)
-    - Elektronenkonfigurations-Engine
-    - Interaktives PSE (Datenbank)
-    - Gamified Learning Path
-    -->
-
     <style>
-        /* --- 1. DESIGN SYSTEM & VARIABLES --- */
+        /* --- CSS VARIABLEN & RESET --- */
         :root {
-            /* Palette: Marineblau & Gold/Warm */
-            --primary: #0b3d91;
-            --primary-light: #2c5aa0;
-            --primary-dark: #001f5c;
-            --secondary: #ffb703; /* Accent Gold */
-            --bg-body: #f0f4f8;
-            --bg-surface: #ffffff;
-            --bg-subtle: #eef2f6;
-            
-            /* Semantik */
+            --primary: #0b3d91; /* Marineblau */
+            --primary-light: #3b6db3;
             --success: #10b981;
             --warning: #f59e0b;
-            --error: #ef4444;
-            --info: #3b82f6;
-            
-            /* Text */
-            --text-main: #1e293b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
             --text-muted: #64748b;
-            --text-light: #94a3b8;
-            --text-on-primary: #ffffff;
-            
-            /* UI Elements */
-            --radius-sm: 8px;
-            --radius-md: 16px;
-            --radius-lg: 24px;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-            
-            /* Transitions */
-            --trans-fast: 0.2s ease;
-            --trans-med: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --radius: 12px;
+            --font-main: system-ui, -apple-system, sans-serif;
         }
 
-        /* --- 2. RESET & BASE --- */
-        *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg-body); color: var(--text-main); line-height: 1.6; padding-bottom: 90px; }
-        
-        h1, h2, h3, h4 { margin: 0; font-weight: 700; color: var(--primary); letter-spacing: -0.02em; }
-        h1 { font-size: 1.75rem; margin-bottom: 0.5rem; }
-        h2 { font-size: 1.4rem; margin-bottom: 1rem; }
-        p { margin-bottom: 1rem; max-width: 65ch; }
-        
-        button { font-family: inherit; cursor: pointer; border: none; outline: none; }
-        input { font-family: inherit; }
+        /* High Contrast Mode Class */
+        body.high-contrast {
+            --primary: #000080;
+            --primary-light: #0000ff;
+            --bg: #ffffff;
+            --card-bg: #ffffff;
+            --text: #000000;
+            --text-muted: #222222;
+            --border: #000000;
+        }
 
-        /* --- 3. COMPONENTS --- */
+        * { box-sizing: border-box; transition: all 0.2s ease-in-out; }
         
-        /* Layout */
-        .app-shell { max-width: 1000px; margin: 0 auto; min-height: 100vh; position: relative; }
-        .view-container { padding: 20px; opacity: 1; transition: opacity 0.3s ease; }
-        .view-container.fade-out { opacity: 0; }
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            line-height: 1.6;
+            padding-bottom: 80px; /* Space for footer */
+        }
+
+        /* --- LAYOUT & TYPOGRAPHY --- */
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1, h2, h3 { color: var(--primary); margin-top: 0; line-height: 1.2; }
+        h1 { font-size: 1.8rem; font-weight: 800; }
         
-        /* Cards */
-        .card { background: var(--bg-surface); border-radius: var(--radius-md); padding: 24px; box-shadow: var(--shadow-sm); margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.04); position: relative; overflow: hidden; transition: var(--trans-fast); }
-        .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-        .card.active-border { border-left: 5px solid var(--primary); }
+        /* --- COMPONENTS --- */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            gap: 8px;
+            font-size: 1rem;
+        }
         
-        /* Buttons */
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; border-radius: 50px; font-weight: 600; font-size: 0.95rem; transition: var(--trans-fast); background: var(--bg-subtle); color: var(--primary); }
-        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(11, 61, 145, 0.25); }
+        .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-light); transform: translateY(-1px); }
-        .btn-primary:active { transform: scale(0.98); }
-        
-        .btn-accent { background: var(--secondary); color: var(--primary-dark); }
         .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
-        .btn-ghost { background: transparent; color: var(--text-muted); }
-        .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
-        .btn-icon { width: 40px; height: 40px; padding: 0; border-radius: 50%; }
+        .btn-outline:hover { background: rgba(11, 61, 145, 0.05); }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.9rem; }
 
-        /* Navigation Bottom Bar */
-        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-surface); padding: 12px 20px; display: flex; justify-content: space-around; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 100; padding-bottom: max(12px, env(safe-area-inset-bottom)); border-top-left-radius: 20px; border-top-right-radius: 20px; max-width: 1000px; margin: 0 auto; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-light); font-size: 0.75rem; font-weight: 500; transition: var(--trans-fast); width: 60px; }
-        .nav-item svg { width: 24px; height: 24px; fill: currentColor; }
-        .nav-item.active { color: var(--primary); transform: translateY(-4px); }
-        
-        /* Progress & Badges */
-        .progress-track { height: 8px; background: var(--bg-subtle); border-radius: 4px; overflow: hidden; width: 100%; }
-        .progress-fill { height: 100%; background: var(--success); transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); width: 0%; }
-        .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-        .badge-new { background: #e0f2fe; color: #0284c7; }
-        .badge-locked { background: #f1f5f9; color: #94a3b8; }
-        
-        /* Inputs */
-        .input-group { position: relative; margin-bottom: 15px; }
-        .form-input { width: 100%; padding: 14px 16px; border: 2px solid var(--bg-subtle); border-radius: var(--radius-sm); font-size: 1rem; transition: var(--trans-fast); background: var(--bg-surface); }
-        .form-input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 4px rgba(11, 61, 145, 0.1); }
-        
-        /* --- 4. MODULES & SPECIFIC UI --- */
-        
-        /* Periodic Table Grid */
-        .pt-grid { display: grid; grid-template-columns: repeat(18, 1fr); gap: 2px; overflow-x: auto; padding: 10px 0; }
-        .pt-cell { aspect-ratio: 0.8; background: white; border: 1px solid #e2e8f0; border-radius: 2px; font-size: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; }
-        .pt-cell:hover { transform: scale(1.5); z-index: 10; border-color: var(--primary); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-        .pt-cell.empty { background: transparent; border: none; pointer-events: none; }
-        .pt-symbol { font-weight: 800; font-size: 1.2em; color: var(--primary-dark); }
-        .pt-num { position: absolute; top: 2px; left: 2px; font-size: 0.7em; color: var(--text-muted); }
-
-        /* Redox Balancer Steps */
-        .balancer-step { margin-bottom: 15px; border-left: 3px solid var(--bg-subtle); padding-left: 15px; transition: var(--trans-fast); }
-        .balancer-step.active { border-color: var(--primary); }
-        .atom-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; font-family: monospace; font-weight: bold; border: 1px solid #cbd5e1; margin: 0 2px; }
-        .ox-up { color: var(--error); } /* Oxidation rot */
-        .ox-down { color: var(--success); } /* Reduktion grün */
-
-        /* Toast Notifications */
-        .toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 2000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-        .toast { background: rgba(30, 41, 59, 0.95); color: white; padding: 12px 24px; border-radius: 50px; font-size: 0.9rem; box-shadow: var(--shadow-lg); opacity: 0; transform: translateY(-20px); transition: var(--trans-med); pointer-events: auto; display: flex; align-items: center; gap: 10px; backdrop-filter: blur(4px); }
-        .toast.visible { opacity: 1; transform: translateY(0); }
-        
-        /* Print Styles */
-        @media print {
-            .no-print, .nav-bar, .btn { display: none !important; }
-            body { background: white; padding: 0; color: black; }
-            .app-shell { max-width: 100%; margin: 0; }
-            .card { break-inside: avoid; border: 1px solid #ccc; box-shadow: none; margin-bottom: 15px; }
-            h1 { font-size: 18pt; } h2 { font-size: 14pt; }
-            .print-header { display: block !important; border-bottom: 2px solid black; margin-bottom: 20px; padding-bottom: 10px; }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
         }
-        .print-header { display: none; }
+        .badge-beginner { background: #dbeafe; color: #1e40af; }
+        .badge-master { background: #fce7f3; color: #9d174d; }
 
-        /* Utility */
-        .hidden { display: none !important; }
-        .flex-between { display: flex; justify-content: space-between; align-items: center; }
-        .text-center { text-align: center; }
-        .mt-2 { margin-top: 1rem; }
-        .font-mono { font-family: 'Courier New', Courier, monospace; }
-        .chem-formula { white-space: nowrap; }
-        .sub { vertical-align: sub; font-size: 0.7em; }
-        .sup { vertical-align: super; font-size: 0.7em; }
+        /* --- NAVIGATION --- */
+        header {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 0.5rem 0;
+        }
+        
+        .nav-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            overflow-x: auto;
+            padding: 0 1rem;
+        }
+
+        .nav-tabs { display: flex; gap: 0.5rem; }
+        .nav-tab {
+            padding: 0.75rem 1rem;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+        }
+        .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        /* --- MODULE VIEWS --- */
+        .view-section { display: none; animation: fadeIn 0.3s; }
+        .view-section.active { display: block; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- INTERACTIVE ELEMENTS --- */
+        .input-group { margin-bottom: 1rem; }
+        .input-field {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .input-field:focus { border-color: var(--primary); outline: none; }
+
+        /* Progress Bar */
+        .progress-track { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--success); width: 0%; transition: width 1s ease; }
+
+        /* Periodic Table Mini */
+        .pt-grid { display: grid; grid-template-columns: repeat(18, 1fr); gap: 2px; margin: 1rem 0; overflow-x: auto; }
+        .pt-cell {
+            aspect-ratio: 1;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.7rem;
+            cursor: pointer;
+            background: white;
+        }
+        .pt-cell:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .pt-empty { border: none; background: transparent; pointer-events: none; }
+
+        /* Redox Steps */
+        .step-container { border-left: 3px solid var(--border); padding-left: 1.5rem; margin: 1.5rem 0; position: relative; }
+        .step-container.active { border-color: var(--primary); }
+        .step-circle {
+            position: absolute; left: -11px; top: 0;
+            width: 20px; height: 20px;
+            background: var(--bg); border: 3px solid var(--border);
+            border-radius: 50%;
+        }
+        .step-container.active .step-circle { border-color: var(--primary); background: var(--primary); }
+
+        /* Flashcards */
+        .flashcard {
+            perspective: 1000px; height: 200px; cursor: pointer;
+        }
+        .flashcard-inner {
+            position: relative; width: 100%; height: 100%;
+            transition: transform 0.6s; transform-style: preserve-3d;
+        }
+        .flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
+        .flashcard-front, .flashcard-back {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: var(--radius); border: 2px solid var(--primary);
+            font-size: 1.2rem; font-weight: bold; padding: 1rem; text-align: center;
+        }
+        .flashcard-front { background: white; color: var(--primary); }
+        .flashcard-back { background: var(--primary); color: white; transform: rotateY(180deg); }
+
+        /* --- PRINT STYLES --- */
+        @media print {
+            body { background: white; color: black; font-size: 12pt; padding: 0; }
+            header, .nav-wrapper, .btn, .no-print { display: none !important; }
+            .container { max-width: 100%; padding: 0; margin: 0; }
+            .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; margin-bottom: 20px; padding: 10px; }
+            .view-section { display: block !important; } /* Show all for "Print All" if needed, or specific logic */
+            .print-only { display: block !important; }
+            
+            /* Spickzettel Optimization */
+            #view-spicker { display: block !important; }
+            .hide-on-print { display: none; }
+        }
+        .print-only { display: none; }
+
+        /* Dev Mode */
+        #dev-panel {
+            position: fixed; bottom: 10px; right: 10px;
+            background: rgba(0,0,0,0.8); color: lime;
+            padding: 10px; border-radius: 8px; font-family: monospace;
+            font-size: 0.8rem; z-index: 9999; max-width: 300px;
+            display: none;
+        }
     </style>
 </head>
 <body>
 
-<!-- PRINT HEADER (Nur beim Drucken sichtbar) -->
-<div class="print-header">
-    <h1>Chemie Spickzettel & Übungsreport</h1>
-    <p>Kurs: 2BK Chemie | Datum: <span id="print-date"></span></p>
-    <p>Themen: Redox, Atommodell, Bindungen, Stöchiometrie</p>
-</div>
-
-<div class="app-shell" id="app">
-    
-    <!-- HEADER -->
-    <header style="padding: 20px 20px 0 20px;" class="flex-between no-print">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <div style="background:var(--primary); color:white; width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.2rem;">C</div>
-            <div>
-                <div style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">CHEMIE PREMIUM</div>
-                <div style="font-weight:700; font-size:1rem;">Masterclass 2BK</div>
+    <!-- HEADER & NAV -->
+    <header class="no-print">
+        <div class="container nav-wrapper">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:30px; height:30px; background:var(--primary); border-radius:50%;"></div>
+                <div>
+                    <div style="font-weight:800; font-size:1.1rem;">Chemie Master</div>
+                    <div style="font-size:0.8rem; color:var(--text-muted);">Prüfung: 14.01.2026</div>
+                </div>
+            </div>
+            <nav class="nav-tabs" id="main-nav">
+                <!-- Tabs injected by JS -->
+            </nav>
+            <div style="font-size:0.9rem;">
+                <span id="user-level" class="badge badge-beginner">Beginner</span>
+                <span style="margin-left:5px;">🔥 <span id="streak-count">0</span></span>
             </div>
         </div>
-        <button class="btn btn-icon btn-ghost" onclick="App.toggleSettings()">⚙️</button>
     </header>
 
-    <!-- CONTENT VIEW CONTAINER -->
-    <main id="main-content" class="view-container">
-        <!-- Views werden hier per JS injiziert -->
-    </main>
-
-    <!-- BOTTOM NAVIGATION -->
-    <nav class="nav-bar">
-        <div class="nav-item active" onclick="App.router('dashboard')" id="nav-dashboard">
-            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-            <span>Home</span>
-        </div>
-        <div class="nav-item" onclick="App.router('lessons')" id="nav-lessons">
-            <svg viewBox="0 0 24 24"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>
-            <span>Lernen</span>
-        </div>
-        <div class="nav-item" onclick="App.router('tools')" id="nav-tools">
-            <svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
-            <span>Tools</span>
-        </div>
-        <div class="nav-item" onclick="App.router('periodic')" id="nav-periodic">
-            <svg viewBox="0 0 24 24"><path d="M4 3h16a2 2 0 012 2v15a1 1 0 01-1 1H3a1 1 0 01-1-1V5a2 2 0 012-2zm0 2v4h4V5H4zm6 0v4h4V5h-4zm6 0v4h4V5h-4zM4 11v4h4v-4H4zm6 0v4h4v-4h-4zm6 0v4h4v-4h-4zM4 17v2h4v-2H4zm6 0v2h4v-2h-4zm6 0v2h4v-2h-4z"/></svg>
-            <span>PSE</span>
-        </div>
-    </nav>
-</div>
-
-<!-- TOAST CONTAINER -->
-<div class="toast-container" id="toast-container"></div>
-
-<!-- JAVASCRIPT LOGIC -->
-<script>
-/**
- * CHEMIE PREMIUM CORE
- * Architektur:
- * 1. Data Store (Content, Elements)
- * 2. Services (Redox, Calc, Storage)
- * 3. View Controllers (Dashboard, Tools, Lesson)
- * 4. App Router
- */
-
-/* --- 1. DATENBANK (Komprimiert für "Single File") --- */
-const ElementsDB = {
-    // Nur wichtigste Elemente für 2BK Schulstoff (Hauptgruppen + wichtige Übergangsmetalle)
-    1: { s:'H', n:'Wasserstoff', m:1.008, en:2.2, c:'1s1', ox:[1,-1] },
-    2: { s:'He', n:'Helium', m:4.002, en:0, c:'1s2', ox:[0] },
-    6: { s:'C', n:'Kohlenstoff', m:12.01, en:2.55, c:'[He] 2s2 2p2', ox:[-4,2,4] },
-    7: { s:'N', n:'Stickstoff', m:14.01, en:3.04, c:'[He] 2s2 2p3', ox:[-3,3,5] },
-    8: { s:'O', n:'Sauerstoff', m:16.00, en:3.44, c:'[He] 2s2 2p4', ox:[-2] },
-    9: { s:'F', n:'Fluor', m:19.00, en:3.98, c:'[He] 2s2 2p5', ox:[-1] },
-    11: { s:'Na', n:'Natrium', m:22.99, en:0.93, c:'[Ne] 3s1', ox:[1] },
-    12: { s:'Mg', n:'Magnesium', m:24.31, en:1.31, c:'[Ne] 3s2', ox:[2] },
-    13: { s:'Al', n:'Aluminium', m:26.98, en:1.61, c:'[Ne] 3s2 3p1', ox:[3] },
-    16: { s:'S', n:'Schwefel', m:32.06, en:2.58, c:'[Ne] 3s2 3p4', ox:[-2,4,6] },
-    17: { s:'Cl', n:'Chlor', m:35.45, en:3.16, c:'[Ne] 3s2 3p5', ox:[-1,1,3,5,7] },
-    19: { s:'K', n:'Kalium', m:39.10, en:0.82, c:'[Ar] 4s1', ox:[1] },
-    20: { s:'Ca', n:'Calcium', m:40.08, en:1.00, c:'[Ar] 4s2', ox:[2] },
-    26: { s:'Fe', n:'Eisen', m:55.85, en:1.83, c:'[Ar] 3d6 4s2', ox:[2,3] },
-    29: { s:'Cu', n:'Kupfer', m:63.55, en:1.90, c:'[Ar] 3d10 4s1', ox:[1,2] },
-    30: { s:'Zn', n:'Zink', m:65.38, en:1.65, c:'[Ar] 3d10 4s2', ox:[2] },
-    // Hilfsfunktion zum Abruf
-    get: function(q) {
-        if(typeof q === 'number') return this[q];
-        return Object.values(this).find(e => e.s.toLowerCase() === q.toLowerCase() || e.n.toLowerCase() === q.toLowerCase());
-    }
-};
-
-/* --- 2. SERVICES --- */
-
-const StorageService = {
-    key: 'chemie_master_v2',
-    state: {
-        level: 'Beginner',
-        progress: {}, // { moduleId: { done: bool, score: int } }
-        streak: 0,
-        lastVisit: null,
-        history: [] // Completed exercises
-    },
-    init() {
-        const stored = localStorage.getItem(this.key);
-        if(stored) this.state = {...this.state, ...JSON.parse(stored)};
+    <!-- MAIN CONTENT -->
+    <div class="container">
         
-        // Streak Logic
-        const today = new Date().toDateString();
-        if(this.state.lastVisit !== today) {
-            this.state.streak = (new Date(this.state.lastVisit).getTime() + 86400000 > new Date().getTime()) ? this.state.streak + 1 : 1;
-            this.state.lastVisit = today;
-            this.save();
-        }
-    },
-    save() {
-        localStorage.setItem(this.key, JSON.stringify(this.state));
-    },
-    markModuleComplete(id, score) {
-        this.state.progress[id] = { done: true, score: Math.max(score, (this.state.progress[id]?.score || 0)) };
-        this.save();
-    }
-};
-
-const RedoxEngine = {
-    // Spezialisierter Solver für die Schulbeispiele (Robustheit > Generizität in dieser komprimierten Datei)
-    solve(input) {
-        const clean = input.replace(/\s+/g, '');
-        
-        // CASE 1: Zn + Cu2+ -> Zn2+ + Cu
-        if(clean.match(/Zn\+Cu(\^?2\+|\^?\+2)/i)) {
-            return {
-                success: true,
-                steps: [
-                    { t: "1. Oxidationszahlen bestimmen", h: "Zn: 0, Cu²⁺: +II | Zn²⁺: +II, Cu: 0" },
-                    { t: "2. Zuordnung", h: "Oxidation: Zn → Zn²⁺ (0 → +II)<br>Reduktion: Cu²⁺ → Cu (+II → 0)" },
-                    { t: "3. Teilgleichungen (Elektronen)", h: "Ox: Zn → Zn²⁺ + 2e⁻<br>Red: Cu²⁺ + 2e⁻ → Cu" },
-                    { t: "4. Ausgleich & Addition", h: "Elektronenanzahl (2e⁻) ist gleich.<br>Zn + Cu²⁺ + 2e⁻ → Zn²⁺ + Cu + 2e⁻" },
-                    { t: "5. Ergebnis", h: "<strong>Zn + Cu²⁺ → Zn²⁺ + Cu</strong>" }
-                ],
-                final: "Zn + Cu²⁺ → Zn²⁺ + Cu"
-            };
-        }
-        
-        // CASE 2: Fe + O2 -> Fe2O3
-        if(clean.match(/Fe\+O2.*Fe2O3/i)) {
-            return {
-                success: true,
-                steps: [
-                    { t: "1. Oxidationszahlen bestimmen", h: "Fe: 0, O₂: 0 | In Fe₂O₃: Fe:+III, O:-II" },
-                    { t: "2. Zuordnung", h: "Oxidation: Fe → Fe³⁺ (0 → +III)<br>Reduktion: O₂ → O²⁻ (0 → -II)" },
-                    { t: "3. Teilgleichungen", h: "Ox: Fe → Fe³⁺ + 3e⁻<br>Red: O₂ + 4e⁻ → 2O²⁻ (Achtung: O₂ sind 2 Atome!)" },
-                    { t: "4. KGV bilden (Elektronenausgleich)", h: "KGV von 3 und 4 ist 12.<br>Ox × 4: 4Fe → 4Fe³⁺ + 12e⁻<br>Red × 3: 3O₂ + 12e⁻ → 6O²⁻" },
-                    { t: "5. Ionen kombinieren", h: "4Fe³⁺ + 6O²⁻ bilden 2 Einheiten Fe₂O₃" },
-                    { t: "6. Ergebnis", h: "<strong>4Fe + 3O₂ → 2Fe₂O₃</strong>" }
-                ],
-                final: "4Fe + 3O₂ → 2Fe₂O₃"
-            };
-        }
-        
-        return { success: false, msg: "Diese Gleichung wird vom Schul-Balancer noch nicht unterstützt. Versuche die Beispiele Zn+Cu2+ oder Fe+O2." };
-    }
-};
-
-const CalcService = {
-    // Berechnet Elektronenkonfig
-    getElectronConfig(z) {
-        // Vereinfachte Logik für Display
-        const el = Object.values(ElementsDB).find(e => Object.values(ElementsDB).indexOf(e)+1 == z); // Mock lookup via index approximation in this small DB isn't great, better use direct lookup
-        // Use hardcoded DB values for this demo to ensure correctness for specific elements requested
-        const e = ElementsDB[z]; 
-        if(e) return { long: e.c, noble: e.c, shells: "2, 8, ..." }; 
-        return { long: "Daten nicht verfügbar", noble: "-", shells: "-" };
-    },
-    
-    // EN Differenz
-    getBondType(el1, el2) {
-        const e1 = ElementsDB.get(el1);
-        const e2 = ElementsDB.get(el2);
-        if(!e1 || !e2) return null;
-        
-        const diff = Math.abs(e1.en - e2.en).toFixed(2);
-        let type = "Unpolar (Kovalent)";
-        if(diff > 1.7) type = "Ionisch";
-        else if(diff > 0.4) type = "Polar (Kovalent)";
-        
-        return { diff, type, e1, e2 };
-    }
-};
-
-/* --- 3. VIEW CONTROLLERS --- */
-
-const App = {
-    init() {
-        StorageService.init();
-        this.router('dashboard');
-        document.getElementById('print-date').innerText = new Date().toLocaleDateString();
-        
-        // Onboarding Check
-        if(!localStorage.getItem('chemie_onboarding')) {
-            this.showOnboarding();
-        }
-    },
-    
-    router(view) {
-        const main = document.getElementById('main-content');
-        main.classList.add('fade-out');
-        
-        // Active Nav State
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        const activeNav = document.getElementById('nav-'+view);
-        if(activeNav) activeNav.classList.add('active');
-        
-        setTimeout(() => {
-            main.innerHTML = '';
-            window.scrollTo(0,0);
-            
-            switch(view) {
-                case 'dashboard': this.renderDashboard(main); break;
-                case 'lessons': this.renderLessons(main); break;
-                case 'tools': this.renderTools(main); break;
-                case 'periodic': this.renderPSE(main); break;
-                default: this.renderDashboard(main);
-            }
-            main.classList.remove('fade-out');
-        }, 300);
-    },
-    
-    showToast(msg, type='success') {
-        const c = document.getElementById('toast-container');
-        const t = document.createElement('div');
-        t.className = `toast`;
-        t.style.borderLeft = `4px solid var(--${type})`;
-        t.innerHTML = `<span>${type === 'success' ? '✅' : '⚠️'}</span> ${msg}`;
-        c.appendChild(t);
-        requestAnimationFrame(() => t.classList.add('visible'));
-        setTimeout(() => {
-            t.classList.remove('visible');
-            setTimeout(() => t.remove(), 300);
-        }, 3000);
-    },
-
-    /* --- VIEW: DASHBOARD --- */
-    renderDashboard(target) {
-        const s = StorageService.state;
-        const progressPct = Object.keys(s.progress).length * 20; // Mock calculation
-        
-        target.innerHTML = `
-            <div class="card" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color:white;">
-                <h2>Willkommen zurück, Chemiker! 👨‍🔬</h2>
-                <p style="color:rgba(255,255,255,0.9)">Bereit für den Test am 14.01.2026? Du hast einen Streak von <strong>${s.streak} Tagen</strong>!</p>
-                <div class="mt-2">
-                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:5px;">
-                        <span>Gesamtfortschritt</span>
-                        <span>${progressPct}%</span>
-                    </div>
-                    <div class="progress-track" style="background:rgba(255,255,255,0.2)">
-                        <div class="progress-fill" style="width:${progressPct}%; background:var(--secondary);"></div>
+        <!-- DASHBOARD VIEW -->
+        <section id="view-dashboard" class="view-section active">
+            <div class="card" style="background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white;">
+                <h2>Willkommen zurück!</h2>
+                <p>Dein Lernplan für den Test am 14.01. ist bereit.</p>
+                <div style="display:flex; gap:1rem; margin-top:1rem;">
+                    <div style="flex:1;">
+                        <small>Gesamtfortschritt</small>
+                        <div class="progress-track" style="background:rgba(255,255,255,0.3);"><div id="main-progress" class="progress-fill" style="background:white;"></div></div>
                     </div>
                 </div>
             </div>
 
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
-                <button class="card btn-ghost" onclick="App.router('lessons')" style="text-align:center; padding:15px; display:block;">
-                    <div style="font-size:2rem;">📚</div>
-                    <strong>Lernpfad</strong>
-                </button>
-                <button class="card btn-ghost" onclick="App.router('tools')" style="text-align:center; padding:15px; display:block;">
-                    <div style="font-size:2rem;">⚖️</div>
-                    <strong>Redox Tool</strong>
-                </button>
-            </div>
-
-            <h3>Nächste Ziele</h3>
-            <div class="card active-border" onclick="App.startLesson('redox')">
-                <div class="flex-between">
-                    <strong>Redox Reaktionen</strong>
-                    <span class="badge badge-new">High Priority</span>
-                </div>
-                <p style="font-size:0.9rem; color:var(--text-muted); margin:5px 0;">Lerne das Ausgleichen mit Teilgleichungen.</p>
-                <div class="progress-track"><div class="progress-fill" style="width: ${s.progress['redox'] ? '100%' : '10%'}"></div></div>
-            </div>
-
-             <div class="card" onclick="window.print()">
-                <div class="flex-between">
-                    <strong>🖨️ Spickzettel drucken</strong>
-                    <span>📄</span>
-                </div>
-                <p style="font-size:0.9rem; color:var(--text-muted);">Zusammenfassung aller Regeln für den Test.</p>
-            </div>
-            
-            <div style="text-align:center; margin-top:30px;">
-                 <button class="btn btn-outline btn-sm" onclick="App.runDevTests()">🛠️ Dev System Check</button>
-            </div>
-        `;
-    },
-
-    /* --- VIEW: LESSONS (Lernpfade) --- */
-    renderLessons(target) {
-        const modules = [
-            { id: 'atom', title: 'A. Atomaufbau', desc: 'Protonen, Neutronen, Schalenmodell' },
-            { id: 'config', title: 'B. Elektronenkonfiguration', desc: 'Orbitale und Schreibweisen' },
-            { id: 'bond', title: 'C. Bindungsarten', desc: 'Ionen, Metall, Atombindung' },
-            { id: 'en', title: 'D. Elektronegativität', desc: 'Polare Bindungen & Trends' },
-            { id: 'redox', title: 'E. Redoxreaktionen', desc: 'Oxidation, Reduktion, Ausgleichen' }
-        ];
-
-        let html = `<h2>Dein Lernpfad</h2><div class="lesson-list">`;
-        
-        modules.forEach((m, idx) => {
-            const isDone = StorageService.state.progress[m.id]?.done;
-            const isLocked = idx > 0 && !StorageService.state.progress[modules[idx-1].id]?.done;
-            
-            html += `
-                <div class="card ${isDone ? 'done' : ''}" style="opacity: ${isLocked ? 0.6 : 1}" onclick="${isLocked ? '' : `App.startLesson('${m.id}')`}">
-                    <div class="flex-between">
-                        <h3>${m.title}</h3>
-                        ${isDone ? '<span class="badge" style="background:var(--success); color:white">Fertig</span>' : (isLocked ? '🔒' : '👉')}
-                    </div>
-                    <p style="font-size:0.9rem; margin-top:5px;">${m.desc}</p>
-                </div>
-            `;
-        });
-        html += `</div>`;
-        target.innerHTML = html;
-    },
-
-    /* --- VIEW: TOOLS (Redox & EN) --- */
-    renderTools(target) {
-        target.innerHTML = `
-            <h2>Werkzeugkasten</h2>
-            
-            <!-- REDOX BALANCER -->
             <div class="card">
-                <h3>⚖️ Redox Balancer (Pro)</h3>
-                <p class="text-sm">Gib eine Gleichung ein oder wähle ein Beispiel.</p>
-                <div style="display:flex; gap:5px; margin-bottom:10px;">
-                    <button class="badge" onclick="Tools.setRedox('Zn + Cu2+ -> Zn2+ + Cu')">Zn + Cu²⁺</button>
-                    <button class="badge" onclick="Tools.setRedox('Fe + O2 -> Fe2O3')">Fe + O₂</button>
+                <h3><span role="img" aria-label="Target">🎯</span> Heutiger Fokus: Redox</h3>
+                <p>Du hast gestern bei den Teilgleichungen noch Fehler gemacht. Lass uns das wiederholen.</p>
+                <button class="btn btn-primary" onclick="app.router.go('redox')">Zum Redox-Tutor</button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                <div class="card">
+                    <h3>Schnellzugriff</h3>
+                    <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                        <button class="btn btn-outline btn-sm" onclick="app.router.go('atom')">Atomaufbau</button>
+                        <button class="btn btn-outline btn-sm" onclick="app.router.go('config')">Elektronenkonfiguration</button>
+                        <button class="btn btn-outline btn-sm" onclick="app.router.go('bonds')">Bindungen & EN</button>
+                    </div>
                 </div>
+                <div class="card">
+                    <h3>Tools & Downloads</h3>
+                    <button class="btn btn-outline btn-sm" style="width:100%; margin-bottom:5px;" onclick="app.printSpicker()">🖨️ Spickzettel drucken</button>
+                    <button class="btn btn-outline btn-sm" style="width:100%;" onclick="app.startAssessment()">📝 Einstufungstest</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ATOMAUFBAU VIEW -->
+        <section id="view-atom" class="view-section">
+            <div class="card">
+                <h2>Atomaufbau & Modelle</h2>
+                <p>Das <strong>Orbitalmodell</strong> ist für die Prüfung entscheidend. Protonen im Kern, Elektronen in Wahrscheinlichkeitsräumen.</p>
+                <div id="atom-visualizer" style="height:300px; background:#111; border-radius:12px; position:relative; overflow:hidden; display:flex; justify-content:center; align-items:center;">
+                    <!-- SVG injected via JS -->
+                </div>
+                <div style="margin-top:1rem; display:flex; justify-content:center; gap:10px;">
+                    <select id="atom-select" class="input-field" style="width:auto;" onchange="app.modules.atom.render(this.value)">
+                        <option value="1">Wasserstoff (H)</option>
+                        <option value="6">Kohlenstoff (C)</option>
+                        <option value="8">Sauerstoff (O)</option>
+                        <option value="11">Natrium (Na)</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- ELEKTRONENKONFIGURATION VIEW -->
+        <section id="view-config" class="view-section">
+            <div class="card">
+                <h2>Elektronenkonfiguration</h2>
                 <div class="input-group">
-                    <input type="text" id="redox-input" class="form-input" placeholder="z.B. Fe + O2 -> Fe2O3">
+                    <label>Element eingeben (Symbol oder Ordnungszahl):</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="config-input" class="input-field" placeholder="z.B. Fe, O, 26">
+                        <button class="btn btn-primary" onclick="app.modules.config.calc()">Berechnen</button>
+                    </div>
                 </div>
-                <button class="btn btn-primary" style="width:100%" onclick="Tools.solveRedoxUI()">Ausgleichen</button>
-                <div id="redox-result" style="margin-top:20px;"></div>
+                <div id="config-result" style="display:none;">
+                    <div class="card" style="background:var(--bg); border:none;">
+                        <h3>Ergebnis für <span id="config-el-name"></span></h3>
+                        <p><strong>Langform:</strong> <span id="config-long" style="font-family:monospace;"></span></p>
+                        <p><strong>Edelgasnotation:</strong> <span id="config-noble" style="font-family:monospace; color:var(--primary); font-weight:bold;"></span></p>
+                        <p><strong>Schalen (K, L, M...):</strong> <span id="config-shells"></span></p>
+                    </div>
+                    <!-- Interactive Orbital Filling Visualization could go here -->
+                </div>
+                <div class="card">
+                    <h3>Übung: Konfiguration bestimmen</h3>
+                    <p>Gib die Konfiguration für <strong>Chlor (Cl)</strong> an:</p>
+                    <input type="text" id="config-ex-input" class="input-field" placeholder="1s2...">
+                    <button class="btn btn-outline btn-sm" onclick="app.ui.showHint('config-hint')">Tipp</button>
+                    <div id="config-hint" class="hidden" style="margin-top:5px; color:var(--text-muted); font-size:0.9rem;">Tipp: Chlor hat 17 Elektronen. Neon ist das vorherige Edelgas.</div>
+                </div>
             </div>
+        </section>
 
-            <!-- EN CALCULATOR -->
+        <!-- BINDUNGEN & EN VIEW -->
+        <section id="view-bonds" class="view-section">
             <div class="card">
-                <h3>⚡ Bindungs-Rechner (ΔEN)</h3>
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <input type="text" id="en-1" class="form-input" placeholder="Na" style="width:80px; text-align:center;">
-                    <strong>—</strong>
-                    <input type="text" id="en-2" class="form-input" placeholder="Cl" style="width:80px; text-align:center;">
-                </div>
-                <button class="btn btn-accent mt-2" onclick="Tools.calcENUI()">Berechnen</button>
-                <div id="en-result" class="mt-2" style="font-weight:bold;"></div>
-            </div>
-        `;
-    },
-
-    /* --- VIEW: PSE --- */
-    renderPSE(target) {
-        let gridHtml = '<div class="pt-grid">';
-        // Minimalistisches Grid rendern (Positionen approx für Demo)
-        // Zeile 1
-        gridHtml += this.ptCell(1); for(let i=0;i<16;i++) gridHtml += `<div class="pt-cell empty"></div>`; gridHtml += this.ptCell(2);
-        // Zeile 2 (stark vereinfacht für Render-Logik ohne komplexe Maps)
-        // ... (hier würde normalerweise ein komplettes Grid generiert. Für die "Single File" Limitierung rendern wir eine Liste wichtiger Elemente)
-        gridHtml += '</div>';
-
-        target.innerHTML = `
-            <h2>Periodensystem (Interaktiv)</h2>
-            <p>Tippe auf ein Element für Details (Schul-Auswahl).</p>
-            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap:5px;">
-                ${Object.values(ElementsDB).map(e => `
-                    <div class="pt-cell" onclick="App.showElementDetail('${e.s}')" style="aspect-ratio:1; font-size:12px;">
-                        <span class="pt-num" style="top:2px; left:4px;">${Object.keys(ElementsDB).find(key => ElementsDB[key] === e)}</span>
-                        <strong style="font-size:1.4em; color:var(--primary)">${e.s}</strong>
-                        <div style="font-size:0.8em; color:#666;">${e.m.toFixed(1)}</div>
+                <h2>Chemische Bindungen & EN-Rechner</h2>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                    <div>
+                        <input type="text" id="en-el1" class="input-field" placeholder="Element 1 (z.B. Na)">
                     </div>
-                `).join('')}
-            </div>
-            
-            <div id="element-detail-overlay" style="display:none; position:fixed; bottom:0; left:0; right:0; background:white; padding:20px; box-shadow:0 -5px 20px rgba(0,0,0,0.1); border-radius:20px 20px 0 0; z-index:150;">
-                <div class="flex-between">
-                    <h3 id="ed-name">Eisen</h3>
-                    <button class="btn btn-sm btn-ghost" onclick="document.getElementById('element-detail-overlay').style.display='none'">Schließen</button>
+                    <div>
+                        <input type="text" id="en-el2" class="input-field" placeholder="Element 2 (z.B. Cl)">
+                    </div>
                 </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
-                    <div><strong>Ordnungszahl:</strong> <span id="ed-z">26</span></div>
-                    <div><strong>Masse:</strong> <span id="ed-mass">55.85</span> u</div>
-                    <div><strong>EN (Pauling):</strong> <span id="ed-en">1.83</span></div>
-                    <div style="grid-column:span 2;"><strong>Konfig:</strong> <span id="ed-conf" class="font-mono">[Ar] 3d6 4s2</span></div>
-                    <div style="grid-column:span 2;"><strong>Oxidationszahlen:</strong> <span id="ed-ox">2, 3</span></div>
+                <button class="btn btn-primary" style="width:100%; margin-top:1rem;" onclick="app.modules.bonds.calc()">Bindung bestimmen</button>
+                
+                <div id="bond-result" class="card" style="margin-top:1.5rem; display:none; background:var(--bg); border-color:var(--primary);">
+                    <h3 id="bond-type-title">Ionenbindung</h3>
+                    <p>ΔEN = <strong id="bond-delta">2.23</strong></p>
+                    <p id="bond-explanation">Da die Differenz größer als 1.7 ist, werden Elektronen übertragen.</p>
+                </div>
+
+                <div style="margin-top:2rem;">
+                    <h3>Grenzwerte (Faustregel)</h3>
+                    <div style="display:flex; height:20px; border-radius:10px; overflow:hidden;">
+                        <div style="width:23%; background:#a5d8ff;" title="Unpolar"></div>
+                        <div style="width:40%; background:#60a5fa;" title="Polar"></div>
+                        <div style="width:37%; background:#1d4ed8;" title="Ionisch"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                        <span>0.0</span><span>0.4</span><span>1.7</span><span>Max</span>
+                    </div>
                 </div>
             </div>
-        `;
-    },
-    
-    ptCell(z) {
-        const e = ElementsDB[z];
-        if(!e) return `<div class="pt-cell empty"></div>`;
-        return `<div class="pt-cell" onclick="App.showElementDetail('${e.s}')">${e.s}</div>`;
-    },
+        </section>
 
-    showElementDetail(symbol) {
-        const e = Object.values(ElementsDB).find(el => el.s === symbol);
-        const z = Object.keys(ElementsDB).find(key => ElementsDB[key] === e);
-        if(!e) return;
-        
-        document.getElementById('ed-name').innerText = `${e.n} (${e.s})`;
-        document.getElementById('ed-z').innerText = z;
-        document.getElementById('ed-mass').innerText = e.m;
-        document.getElementById('ed-en').innerText = e.en;
-        document.getElementById('ed-conf').innerText = e.c;
-        document.getElementById('ed-ox').innerText = e.ox.join(', ');
-        
-        document.getElementById('element-detail-overlay').style.display = 'block';
-    },
+        <!-- REDOX TUTOR VIEW -->
+        <section id="view-redox" class="view-section">
+            <div class="card">
+                <h2>Redox-Balancer & Tutor</h2>
+                <p>Schritt-für-Schritt Ausgleich mit der Teilgleichungsmethode.</p>
+                
+                <div style="display:flex; gap:10px; margin-bottom:1.5rem;">
+                    <button class="btn btn-outline btn-sm" onclick="app.modules.redox.loadExample('zn')">Beispiel: Zn + Cu²⁺</button>
+                    <button class="btn btn-outline btn-sm" onclick="app.modules.redox.loadExample('fe')">Beispiel: Fe + O₂</button>
+                </div>
 
-    /* --- LOGIC: LESSON PLAYER --- */
-    startLesson(id) {
-        const main = document.getElementById('main-content');
-        
-        // Content für Redox (Hardcoded Beispiel für den Prompt)
-        if(id === 'redox') {
-            main.innerHTML = `
-                <div style="max-width:800px; margin:0 auto;">
-                    <button class="btn btn-ghost btn-sm" onclick="App.router('lessons')">← Zurück zur Übersicht</button>
-                    <h1>Redoxreaktionen Meistern</h1>
-                    
-                    <div class="card">
-                        <h3>1. Grundlagen</h3>
-                        <p>Redox bedeutet <strong>Elektronenübertragung</strong>.</p>
+                <div id="redox-workspace" style="display:none;">
+                    <h3 id="redox-title"></h3>
+                    <div id="redox-steps-display"></div>
+                    <div style="display:flex; justify-content:space-between; margin-top:1.5rem;">
+                        <button class="btn btn-outline" onclick="app.modules.redox.reset()">Neu starten</button>
+                        <button class="btn btn-primary" id="redox-next-btn" onclick="app.modules.redox.nextStep()">Nächster Schritt ▶</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SPICKZETTEL VIEW (Print) -->
+        <section id="view-spicker" class="view-section">
+            <div class="card print-only">
+                <h1 style="text-align:center;">Chemie Spickzettel 2026</h1>
+                <div style="column-count: 2; column-gap: 2rem;">
+                    <article>
+                        <h3>1. Oxidationszahlen Regeln</h3>
                         <ul>
-                            <li><strong>Oxidation:</strong> Elektronenabgabe (Ox-Zahl steigt 📈).</li>
-                            <li><strong>Reduktion:</strong> Elektronenaufnahme (Ox-Zahl sinkt 📉).</li>
+                            <li>Elemente (z.B. Fe, O₂) = 0</li>
+                            <li>Einatomige Ionen = Ladung</li>
+                            <li>Fluor = -1</li>
+                            <li>Wasserstoff = +1 (meistens)</li>
+                            <li>Sauerstoff = -2 (außer Peroxide)</li>
+                            <li>Summe im Molekül = 0</li>
                         </ul>
-                        <div style="background:#e0f2fe; padding:10px; border-radius:8px; margin:10px 0;">
-                            <strong>Merkspruch:</strong> O.A.R.G. (Oxidation = Abgabe, Reduktion = Gewinn)
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <h3>2. Interaktives Beispiel: Zn + Cu²⁺</h3>
-                        <p>Was passiert hier?</p>
-                        <div style="font-size:1.2rem; text-align:center; padding:15px; font-family:monospace;">Zn + Cu²⁺ → Zn²⁺ + Cu</div>
-                        <div style="margin-top:10px;">
-                            <button class="btn btn-outline btn-sm" onclick="this.nextElementSibling.classList.remove('hidden')">Lösung zeigen</button>
-                            <div class="hidden mt-2" style="background:#f0fdf4; padding:10px; border-radius:8px;">
-                                Zink (Zn) gibt 2 Elektronen ab (wird zu Zn²⁺) -> <strong>Oxidation</strong><br>
-                                Kupferionen (Cu²⁺) nehmen 2 Elektronen auf -> <strong>Reduktion</strong>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <h3>3. Abschluss-Quiz</h3>
-                        <p>Was passiert bei der Oxidation?</p>
-                        <button class="btn btn-outline" style="width:100%; margin-bottom:5px;" onclick="App.showToast('Falsch. Das ist Reduktion.', 'error')">Elektronenaufnahme</button>
-                        <button class="btn btn-outline" style="width:100%;" onclick="App.lessonComplete('redox')">Elektronenabgabe</button>
-                    </div>
+                    </article>
+                    <article>
+                        <h3>2. Bindungsarten (ΔEN)</h3>
+                        <ul>
+                            <li><strong>0.0 - 0.4:</strong> Unpolare Atombindung (e⁻ symmetrisch)</li>
+                            <li><strong>0.5 - 1.7:</strong> Polare Atombindung (Dipol)</li>
+                            <li><strong>> 1.7:</strong> Ionenbindung (Gitter)</li>
+                        </ul>
+                    </article>
+                    <article>
+                        <h3>3. Orbitalmodell</h3>
+                        <p>s-Orbital: Kugel (max 2e⁻)<br>p-Orbital: Hantel (max 6e⁻)</p>
+                        <p><strong>Besetzung:</strong> 1s → 2s → 2p → 3s → 3p → 4s → 3d</p>
+                    </article>
+                    <article>
+                        <h3>4. Redox-Schritte</h3>
+                        <ol>
+                            <li>Ox-Zahlen bestimmen</li>
+                            <li>Oxidation/Reduktion identifizieren</li>
+                            <li>Teilgleichungen (e⁻ Ausgleich)</li>
+                            <li>Ladungsausgleich (falls sauer/basisch)</li>
+                            <li>KGV bilden & Multiplizieren</li>
+                            <li>Addieren & Kürzen</li>
+                        </ol>
+                    </article>
                 </div>
-            `;
-        } else {
-            this.showToast('Dieses Modul ist in der Demo-Version nicht vollständig enthalten.', 'warning');
-        }
-    },
+            </div>
+        </section>
 
-    lessonComplete(id) {
-        StorageService.markModuleComplete(id, 100);
-        this.showToast('Modul abgeschlossen! 🎉');
-        App.router('dashboard');
-    },
+    </div>
 
-    /* --- ONBOARDING --- */
-    showOnboarding() {
-        const d = document.createElement('div');
-        d.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.95);z-index:9999;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px;text-align:center;";
-        d.innerHTML = `
-            <div style="font-size:3rem;margin-bottom:20px;">🧪</div>
-            <h1>Willkommen!</h1>
-            <p>Dein Premium-Trainer für die 2BK Chemie-Prüfung.</p>
-            <ul style="text-align:left; max-width:300px; margin:20px auto; color:#666;">
-                <li>✨ Redox-Balancer für Hausübungen</li>
-                <li>📚 Interaktive Lernpfade</li>
-                <li>💾 Automatisches Speichern</li>
-            </ul>
-            <button class="btn btn-primary" onclick="localStorage.setItem('chemie_onboarding','true'); this.parentElement.remove()">Loslegen 🚀</button>
-        `;
-        document.body.appendChild(d);
-    },
-    
-    toggleSettings() {
-        if(confirm("Fortschritt zurücksetzen?")) {
-            localStorage.removeItem(StorageService.key);
-            location.reload();
-        }
-    },
-    
-    runDevTests() {
-        console.log("Running QA...");
-        const t1 = RedoxEngine.solve("Zn + Cu2+ -> Zn2+ + Cu").success;
-        const t2 = RedoxEngine.solve("Fe + O2 -> Fe2O3").success;
-        const t3 = CalcService.getBondType('Na', 'Cl').type === 'Ionisch';
-        
-        const msg = `Tests:\nRedox Zn/Cu: ${t1 ? 'PASS':'FAIL'}\nRedox Fe/O2: ${t2 ? 'PASS':'FAIL'}\nEN Na/Cl: ${t3 ? 'PASS':'FAIL'}`;
-        alert(msg);
-    }
-};
+    <!-- DEV MODE OVERLAY -->
+    <div id="dev-panel">
+        <strong>Dev Mode</strong><br>
+        <div id="dev-log"></div>
+    </div>
 
-const Tools = {
-    setRedox(val) { document.getElementById('redox-input').value = val; },
-    
-    solveRedoxUI() {
-        const inp = document.getElementById('redox-input').value;
-        const res = RedoxEngine.solve(inp);
-        const out = document.getElementById('redox-result');
-        
-        if(!res.success) {
-            out.innerHTML = `<div style="color:var(--error); background:#fee2e2; padding:10px; border-radius:8px;">${res.msg}</div>`;
-            return;
-        }
-        
-        let html = `<div style="background:#f0fdf4; padding:15px; border-radius:8px; border:1px solid #bbf7d0;">
-            <h4 style="color:#166534; margin-bottom:10px;">Lösung: ${res.final}</h4>`;
-            
-        res.steps.forEach((s, i) => {
-            html += `
-                <div class="balancer-step" style="animation: slideDown 0.3s ease ${i*0.1}s backwards">
-                    <strong style="font-size:0.9rem; color:var(--text-muted)">${s.t}</strong>
-                    <div class="font-mono" style="margin-top:2px;">${s.h}</div>
-                </div>
-            `;
+    <!-- JAVASCRIPT -->
+    <script>
+        /* --- DATENBANK --- */
+        const DB = {
+            elements: {
+                1: {s:'H', n:'Wasserstoff', en:2.2, c:'1s1'},
+                2: {s:'He', n:'Helium', en:0, c:'1s2'},
+                3: {s:'Li', n:'Lithium', en:0.98, c:'[He] 2s1'},
+                6: {s:'C', n:'Kohlenstoff', en:2.55, c:'[He] 2s2 2p2'},
+                7: {s:'N', n:'Stickstoff', en:3.04, c:'[He] 2s2 2p3'},
+                8: {s:'O', n:'Sauerstoff', en:3.44, c:'[He] 2s2 2p4'},
+                11: {s:'Na', n:'Natrium', en:0.93, c:'[Ne] 3s1'},
+                17: {s:'Cl', n:'Chlor', en:3.16, c:'[Ne] 3s2 3p5'},
+                26: {s:'Fe', n:'Eisen', en:1.83, c:'[Ar] 4s2 3d6'},
+                29: {s:'Cu', n:'Kupfer', en:1.9, c:'[Ar] 4s1 3d10'},
+                30: {s:'Zn', n:'Zink', en:1.65, c:'[Ar] 4s2 3d10'}
+            },
+            redoxExamples: {
+                'zn': {
+                    title: "Zink reagiert mit Kupferionen",
+                    steps: [
+                        {t:"1. Edukte & Produkte", d:"Zn + Cu²⁺ → Zn²⁺ + Cu"},
+                        {t:"2. Oxidationszahlen", d:"Zn(0), Cu(+II), Zn(+II), Cu(0)"},
+                        {t:"3. Teilgleichungen", d:"Ox: Zn → Zn²⁺ + 2e⁻<br>Red: Cu²⁺ + 2e⁻ → Cu"},
+                        {t:"4. Elektronenausgleich", d:"Beide 2e⁻ → keine Multiplikation nötig."},
+                        {t:"5. Gesamtreaktion", d:"Zn + Cu²⁺ → Zn²⁺ + Cu"}
+                    ]
+                },
+                'fe': {
+                    title: "Eisenrostung (Eisen + Sauerstoff)",
+                    steps: [
+                        {t:"1. Reaktionsgleichung", d:"Fe + O₂ → Fe₂O₃ (unbalanciert)"},
+                        {t:"2. Oxidationszahlen", d:"Fe: 0, O: 0 → Fe: +III, O: -II"},
+                        {t:"3. Elektronenbilanz (pro Atom)", d:"Ox: Fe → Fe³⁺ + 3e⁻<br>Red: O + 2e⁻ → O²⁻ (Achtung O₂!)"},
+                        {t:"4. Korrekte Teilgleichungen", d:"Ox: Fe → Fe³⁺ + 3e⁻<br>Red: O₂ + 4e⁻ → 2O²⁻"},
+                        {t:"5. KGV & Multiplikation", d:"KGV(3,4) = 12.<br>Ox × 4: 4Fe → 4Fe³⁺ + 12e⁻<br>Red × 3: 3O₂ + 12e⁻ → 6O²⁻"},
+                        {t:"6. Addition & Salzbildung", d:"4Fe + 3O₂ → 4Fe³⁺ + 6O²⁻ → 2Fe₂O₃"}
+                    ]
+                }
+            }
+        };
+
+        /* --- HAUPTAPP --- */
+        const app = {
+            state: {
+                level: 'Beginner',
+                points: 0,
+                streak: 0,
+                devMode: false
+            },
+
+            init() {
+                this.loadProgress();
+                this.router.init();
+                this.ui.renderNav();
+                // Check Dev Mode via URL hash #dev
+                if(window.location.hash.includes('dev')) this.toggleDevMode();
+            },
+
+            /* --- MODULE: ROUTING & UI --- */
+            router: {
+                routes: ['dashboard', 'atom', 'config', 'bonds', 'redox', 'spicker'],
+                go(route) {
+                    document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+                    document.getElementById(`view-${route}`).classList.add('active');
+                    
+                    // Update Nav
+                    document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+                    const btn = document.getElementById(`nav-${route}`);
+                    if(btn) btn.classList.add('active');
+                    
+                    window.scrollTo(0,0);
+                },
+                init() { this.go('dashboard'); }
+            },
+
+            ui: {
+                renderNav() {
+                    const nav = document.getElementById('main-nav');
+                    const labels = {
+                        dashboard: 'Dashboard', atom: 'Atombau', config: 'e⁻ Konfig',
+                        bonds: 'Bindungen', redox: 'Redox', spicker: 'Spickzettel'
+                    };
+                    nav.innerHTML = app.router.routes.map(r => 
+                        `<button id="nav-${r}" class="nav-tab" onclick="app.router.go('${r}')">${labels[r]}</button>`
+                    ).join('');
+                },
+                showHint(id) { document.getElementById(id).style.display = 'block'; }
+            },
+
+            /* --- MODUL: ATOMBAU --- */
+            modules: {
+                atom: {
+                    render(z) {
+                        const el = DB.elements[z];
+                        // Simuliertes SVG Generierung
+                        const svg = `<svg viewBox="0 0 200 200" width="100%" height="100%">
+                            <circle cx="100" cy="100" r="10" fill="#f59e0b" />
+                            <text x="100" y="104" text-anchor="middle" fill="black" font-size="8">${el.s}</text>
+                            <circle cx="100" cy="100" r="40" fill="none" stroke="#666" stroke-width="1" opacity="0.5"/>
+                            <circle cx="100" cy="100" r="70" fill="none" stroke="#666" stroke-width="1" opacity="0.5"/>
+                            ${this.getElectrons(z)}
+                        </svg>`;
+                        document.getElementById('atom-visualizer').innerHTML = svg;
+                    },
+                    getElectrons(count) {
+                        let svg = '';
+                        // Vereinfachte Darstellung: 1. Schale max 2, 2. Schale max 8
+                        let shells = [2, 8, 18];
+                        let r = [40, 70, 95];
+                        let remaining = count;
+                        
+                        shells.forEach((max, i) => {
+                            let current = Math.min(remaining, max);
+                            if(current > 0) {
+                                for(let j=0; j<current; j++) {
+                                    let angle = (j/current)*Math.PI*2;
+                                    let x = 100 + Math.cos(angle)*r[i];
+                                    let y = 100 + Math.sin(angle)*r[i];
+                                    svg += `<circle cx="${x}" cy="${y}" r="4" fill="#3b82f6" />`;
+                                }
+                                remaining -= current;
+                            }
+                        });
+                        return svg;
+                    }
+                },
+
+                /* --- MODUL: KONFIGURATION --- */
+                config: {
+                    calc() {
+                        let val = document.getElementById('config-input').value.trim();
+                        let z = 0;
+                        
+                        // Versuche Symbol lookup
+                        const entry = Object.entries(DB.elements).find(([k,v]) => v.s.toLowerCase() === val.toLowerCase());
+                        if(entry) z = parseInt(entry[0]);
+                        else z = parseInt(val);
+
+                        if(!z || !DB.elements[z]) {
+                            alert("Element nicht in der Datenbank (Verfügbar: H, He, Li, C, N, O, F, Na, Cl, Fe, Cu, Zn)");
+                            return;
+                        }
+
+                        const el = DB.elements[z];
+                        document.getElementById('config-result').style.display = 'block';
+                        document.getElementById('config-el-name').innerText = `${el.n} (${el.s})`;
+                        document.getElementById('config-noble').innerText = el.c;
+                        document.getElementById('config-long').innerText = this.genLong(z);
+                        document.getElementById('config-shells').innerText = this.genShells(z);
+                    },
+                    genLong(z) {
+                        // Hardcoded logic for standard Aufbaprinzip for Demo
+                        const order = ["1s2", "2s2", "2p6", "3s2", "3p6", "4s2", "3d10"];
+                        let res = "";
+                        let rem = z;
+                        for(let orb of order) {
+                            let cap = parseInt(orb.slice(2));
+                            let take = Math.min(rem, cap);
+                            if(take > 0) res += orb.slice(0,2) + take + " ";
+                            rem -= take;
+                            if(rem <= 0) break;
+                        }
+                        return res;
+                    },
+                    genShells(z) {
+                        // K, L, M logic simplified
+                        let arr = [];
+                        let rem = z;
+                        [2, 8, 18, 32].forEach(max => {
+                            let take = Math.min(rem, max);
+                            if(take > 0) arr.push(take);
+                            rem -= take;
+                        });
+                        return arr.join(" | ");
+                    }
+                },
+
+                /* --- MODUL: BINDUNGEN --- */
+                bonds: {
+                    calc() {
+                        const s1 = document.getElementById('en-el1').value.trim();
+                        const s2 = document.getElementById('en-el2').value.trim();
+                        const e1 = Object.values(DB.elements).find(e => e.s.toLowerCase() === s1.toLowerCase());
+                        const e2 = Object.values(DB.elements).find(e => e.s.toLowerCase() === s2.toLowerCase());
+
+                        if(!e1 || !e2) { alert("Element nicht gefunden"); return; }
+
+                        const diff = Math.abs(e1.en - e2.en).toFixed(2);
+                        document.getElementById('bond-result').style.display = 'block';
+                        document.getElementById('bond-delta').innerText = diff;
+                        
+                        let type = "Unpolar";
+                        let color = "#a5d8ff";
+                        if(diff > 0.4) { type = "Polar"; color = "#60a5fa"; }
+                        if(diff > 1.7) { type = "Ionenbindung"; color = "#1d4ed8"; }
+                        
+                        document.getElementById('bond-type-title').innerText = type;
+                        document.getElementById('bond-result').style.borderColor = color;
+                    }
+                },
+
+                /* --- MODUL: REDOX --- */
+                redox: {
+                    currentExample: null,
+                    stepIndex: 0,
+                    loadExample(key) {
+                        this.currentExample = DB.redoxExamples[key];
+                        this.stepIndex = 0;
+                        document.getElementById('redox-workspace').style.display = 'block';
+                        document.getElementById('redox-title').innerText = this.currentExample.title;
+                        document.getElementById('redox-steps-display').innerHTML = '';
+                        document.getElementById('redox-next-btn').style.display = 'inline-block';
+                        this.renderStep();
+                    },
+                    renderStep() {
+                        const step = this.currentExample.steps[this.stepIndex];
+                        const div = document.createElement('div');
+                        div.className = 'step-container active';
+                        div.innerHTML = `<div class="step-circle"></div><strong>${step.t}</strong><div style="margin-top:5px; font-family:monospace;">${step.d}</div>`;
+                        
+                        // Deactivate previous
+                        const prev = document.getElementById('redox-steps-display').lastElementChild;
+                        if(prev) prev.classList.remove('active');
+                        
+                        document.getElementById('redox-steps-display').appendChild(div);
+                    },
+                    nextStep() {
+                        this.stepIndex++;
+                        if(this.stepIndex < this.currentExample.steps.length) {
+                            this.renderStep();
+                        } else {
+                            document.getElementById('redox-next-btn').style.display = 'none';
+                        }
+                    },
+                    reset() {
+                        document.getElementById('redox-steps-display').innerHTML = '';
+                        this.stepIndex = 0;
+                        document.getElementById('redox-next-btn').style.display = 'inline-block';
+                        this.renderStep();
+                    }
+                }
+            },
+
+            /* --- SYSTEM FUNCTIONS --- */
+            printSpicker() {
+                window.print();
+            },
+            startAssessment() {
+                alert("Einstufungstest startet... (Demo: Setze Level auf Intermediate)");
+                this.state.level = 'Intermediate';
+                this.saveProgress();
+                location.reload();
+            },
+            saveProgress() {
+                localStorage.setItem('chemie2026_user', JSON.stringify(this.state));
+            },
+            loadProgress() {
+                const saved = localStorage.getItem('chemie2026_user');
+                if(saved) this.state = JSON.parse(saved);
+                this.updateUI();
+            },
+            updateUI() {
+                document.getElementById('user-level').innerText = this.state.level;
+                // Update Badge color based on level
+                const badge = document.getElementById('user-level');
+                badge.className = `badge badge-${this.state.level.toLowerCase()}`;
+                
+                // Progress Bar logic
+                let prog = 0;
+                if(this.state.level === 'Intermediate') prog = 33;
+                if(this.state.level === 'Advanced') prog = 66;
+                document.getElementById('main-progress').style.width = prog + '%';
+            },
+            toggleDevMode() {
+                this.state.devMode = !this.state.devMode;
+                const panel = document.getElementById('dev-panel');
+                panel.style.display = this.state.devMode ? 'block' : 'none';
+                if(this.state.devMode) this.runDevTests();
+            },
+            runDevTests() {
+                const log = document.getElementById('dev-log');
+                log.innerHTML = "Running Unit Tests...<br>";
+                
+                // Test 1: Electron Config Fe
+                const fe = this.modules.config.genLong(26);
+                const pass1 = fe.includes("3d6");
+                log.innerHTML += `Config Fe: ${pass1 ? 'PASS' : 'FAIL'}<br>`;
+
+                // Test 2: EN Na-Cl
+                const e1 = DB.elements[11]; // Na
+                const e2 = DB.elements[17]; // Cl
+                const diff = Math.abs(e1.en - e2.en);
+                const pass2 = diff > 1.7;
+                log.innerHTML += `Bond Na-Cl Ion: ${pass2 ? 'PASS' : 'FAIL'} (${diff.toFixed(2)})<br>`;
+            }
+        };
+
+        // Start App
+        window.addEventListener('DOMContentLoaded', () => {
+            app.init();
+            app.modules.atom.render(1); // Default Atom view
         });
-        html += `</div>`;
-        out.innerHTML = html;
-    },
-    
-    calcENUI() {
-        const e1 = document.getElementById('en-1').value;
-        const e2 = document.getElementById('en-2').value;
-        const res = CalcService.getBondType(e1, e2);
-        const out = document.getElementById('en-result');
-        
-        if(!res) {
-            out.innerText = "Elemente nicht gefunden. Bitte Symbol (z.B. Na) eingeben.";
-            out.style.color = "var(--error)";
-            return;
-        }
-        
-        out.style.color = "var(--text-main)";
-        out.innerHTML = `ΔEN = ${res.diff} → <span style="color:var(--primary);">${res.type}</span>`;
-    }
-};
 
-// Start App
-window.addEventListener('DOMContentLoaded', () => App.init());
-
-</script>
-
-<style>
-@keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
-</style>
+    </script>
 </body>
 </html>
